@@ -1,0 +1,8 @@
+ecs_build_dir: "build"
+ecs_template_dir: "{{ ecs_build_dir }}"
+ecs_asg_desired_capacity: "2"
+ecs_asg_max_capacity: "2"
+ecs_asg_min_capacity: "1"
+ecs_key_name: "{{ ecs_stack_name }}"
+ecs_max_cluster_size: "1"
+ecs_instance_type: "t2.micro"

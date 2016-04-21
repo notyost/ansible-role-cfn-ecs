@@ -1,0 +1,31 @@
+- name: Create build directory if not extant
+  file:
+    state: directory
+    dest: "{{ ecs_template_dir }}"
+
+- name: Template the ecs stack
+  template:
+    src: ecs.json.j2
+    dest: "{{ ecs_template_dir }}/ecs.json"
+
+- name: Create cloudformation stack
+  cloudformation:
+    template_parameters:
+      ContainerPort: 8081
+      ContainerName: "{{ ecs_container_name }}"
+      KeyName: "{{ ecs_host_keypair_name }}"
+      HostAMI: "{{ ecs_host_ami }}"
+      SubnetID: "{{ ecs_subnet }}"
+      DesiredCapacity: "{{ ecs_asg_desired_capacity }}"
+      MaxCapacity: "{{ ecs_asg_max_capacity }}"
+      MinCapacity: "{{ ecs_asg_min_capacity }}"
+      InstanceType: "{{ ecs_instance_type }}"
+      VPC: "{{ ecs_host_vpc }}"
+      ZoneName: "{{ ecs_zone_name }}"
+      DomainName: "{{ ecs_domain_name }}"
+      ELBAccessCIDR: "{{ ecs_elb_access_cidr }}"
+    stack_name: "{{ ecs_stack_name }}"
+    region: "{{ ecs_region }}"
+    template: "{{ ecs_template_dir }}/ecs.json"
+    security_token: "{{ lookup('env','AWS_SESSION_TOKEN' ) }}"
+    tags: "{{ tags }}"
