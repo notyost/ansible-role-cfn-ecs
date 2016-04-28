@@ -1,6 +1,21 @@
 {
   "AWSTemplateFormatVersion" : "2010-09-09",
   "Parameters" : {
+    "ZoneName" : {
+      "Type" : "String"
+    },
+    "DomainName" : {
+      "Type" : "String"
+    },
+    "VPC" : {
+      "Type" : "AWS::EC2::VPC::Id"
+    },
+    "CredstashKey" : {
+      "Type" : "String"
+    },
+    "Account" : {
+      "Type" : "Number"
+    },
     "ContainerName" : {
       "Type" : "String"
     },
@@ -35,9 +50,9 @@
       "Type" : "String",
       "AllowedValues" : [ "t2.nano", "t2.micro", "t2.small", "t2.medium", "m3.medium", "m3.large", "m3.xlarge",
 "m3.2xlarge", "c3.large", "c3.xlarge", "c3.2xlarge", "c3.4xlarge", "c3.8xlarge", "c4.large", "c4.xlarge",
-"c4.2xlarge", "c4.4xlarge", "c4.8xlarge", "r3.large", "r3.xlarge", "r3.2xlarge", "r3.4xlarge", 
+"c4.2xlarge", "c4.4xlarge", "c4.8xlarge", "r3.large", "r3.xlarge", "r3.2xlarge", "r3.4xlarge",
 "r3.8xlarge",
-"i2.xlarge", "i2.2xlarge", "i2.4xlarge", "i2.8xlarge", "d2.xlarge", "d2.2xlarge", "d2.4xlarge", 
+"i2.xlarge", "i2.2xlarge", "i2.4xlarge", "i2.8xlarge", "d2.xlarge", "d2.2xlarge", "d2.4xlarge",
 "d2.8xlarge",
 "hi1.4xlarge", "hs1.8xlarge", "cr1.8xlarge", "cc2.8xlarge"],
       "ConstraintDescription" : "must be a valid EC2 instance type."
@@ -104,16 +119,31 @@
         {% endif %}
       }
     },
+    "ELBSecurityGroup" : {
+      "Type" : "AWS::EC2::SecurityGroup",
+      "Properties" : {
+        "GroupDescription" : "Security group for logging nginx auth elb",
+        "SecurityGroupIngress" : [ {
+          "CidrIp" : "75.72.168.7/32",
+          "FromPort" : "80",
+          "IpProtocol" : "tcp",
+          "ToPort" : "80"
+        } ],
+        "VpcId" : { "Ref" : "VPC" }
+      }
+    },
     "EcsElasticLoadBalancer" : {
       "Type" : "AWS::ElasticLoadBalancing::LoadBalancer",
       "Properties" : {
         "Subnets" : { "Ref" : "SubnetID" },
+        "SecurityGroups" : [ { "Fn::GetAtt" : ["ELBSecurityGroup","GroupId"] } ],
         "Listeners" : [
           {% for listener in ecs_elb.listeners %}
           {
             "LoadBalancerPort" : "{{ listener.elb_port }}",
             "InstancePort" : "{{ listener.instance_port }}",
-            "Protocol" : "{{ listener.protocol }}"
+            "Protocol" : "{{ listener.protocol }}",
+            "SSLCertificateId" : "{{ listener.certificate }}"
           }
           {% if not loop.last %}, {% endif %}
           {% endfor %}
@@ -127,6 +157,17 @@
         }
       }
     },
+    "DomainRecordSet" : {
+      "Type" : "AWS::Route53::RecordSet",
+      "Properties" : {
+        "ResourceRecords" : [{ "Fn::GetAtt" : [ "EcsElasticLoadBalancer", "DNSName" ] }],
+        "Comment" : "ECS host domain name.",
+        "HostedZoneName" : { "Ref" : "ZoneName" },
+        "Name" : { "Ref" : "DomainName" },
+        "Type" : "CNAME",
+        "TTL" : 300
+      }
+    },
     "ECSAutoScalingGroup" : {
       "Type" : "AWS::AutoScaling::AutoScalingGroup",
       "Properties" : {
@@ -138,16 +179,29 @@
       },
       "CreationPolicy" : {
         "ResourceSignal" : {
-          "Timeout" : "PT15M"
+          "Timeout" : "PT45M"
         }
       },
       "UpdatePolicy": {
         "AutoScalingRollingUpdate": {
           "MinInstancesInService": "1",
           "MaxBatchSize": "1",
-          "PauseTime" : "PT15M",
+          "PauseTime" : "PT45M",
           "WaitOnResourceSignals": "true"
         }
+      }
+    },
+    "InstanceSecurityGroup" : {
+      "Type" : "AWS::EC2::SecurityGroup",
+      "Properties" : {
+        "SecurityGroupIngress" : [ {
+          "SourceSecurityGroupId" : { "Fn::GetAtt" : ["ELBSecurityGroup", "GroupId"] },
+          "IpProtocol" : "tcp",
+          "FromPort" : "80",
+          "ToPort" : "80"
+        } ],
+        "GroupDescription" : "Security Group for nginx cluster instance.",
+        "VpcId" : { "Ref" : "VPC" }
       }
     },
     "ContainerInstances": {
@@ -176,7 +230,7 @@
                   "[cfn-auto-reloader-hook]\n",
                   "triggers=post.update\n",
                   "path=Resources.ContainerInstances.Metadata.AWS::CloudFormation::Init\n",
-                  "action=/opt/aws/bin/cfn-init -v ",
+                  "action=/usr/bin/cfn-init -v ",
                   "         --stack ", { "Ref" : "AWS::StackName" },
                   "         --resource ContainerInstances ",
                   "         --region ", { "Ref" : "AWS::Region" }, "\n",
@@ -187,7 +241,7 @@
 
             "services" : {
               "sysvinit" : {
-                "cfn-hup" : { "enabled" : "true", "ensureRunning" : "true", "files" : 
+                "cfn-hup" : { "enabled" : "true", "ensureRunning" : "true", "files" :
 ["/etc/cfn/cfn-hup.conf", "/etc/cfn/hooks.d/cfn-auto-reloader.conf"] }
               }
             }
@@ -196,12 +250,14 @@
       },
       "Properties": {
         "ImageId" : { "Ref" : "HostAMI" },
+        "AssociatePublicIpAddress" : "true",
         "InstanceType"   : { "Ref" : "InstanceType" },
         "IamInstanceProfile": { "Ref": "EC2InstanceProfile" },
         "KeyName"        : { "Ref" : "KeyName" },
+        "SecurityGroups" : [{ "Fn::GetAtt" : ["InstanceSecurityGroup","GroupId"] }],
         "UserData"       : { "Fn::Base64" : { "Fn::Join" : ["", [
              "#!/bin/bash -xe\n",
-             "apt-get install -y aws-cfn-bootstrap\n",
+             "yum install -y aws-cfn-bootstrap\n",
 
              "/opt/aws/bin/cfn-init -v ",
              "         --stack ", { "Ref" : "AWS::StackName" },
@@ -272,7 +328,7 @@
           }
         ]
       }
-    },    
+    },
     "EC2Role": {
       "Type": "AWS::IAM::Role",
       "Properties": {
@@ -301,20 +357,41 @@
                   "Effect": "Allow",
                   "Action": [
                     "ecs:CreateCluster",
-                    "ecs:RegisterContainerInstance",
                     "ecs:DeregisterContainerInstance",
                     "ecs:DiscoverPollEndpoint",
+                    "ecs:Poll",
+                    "ecs:RegisterContainerInstance",
+                    "ecs:StartTelemetrySession",
                     "ecs:Submit*",
-                    "ecs:Poll"
+                    "ecr:GetAuthorizationToken",
+                    "ecr:BatchCheckLayerAvailability",
+                    "ecr:GetDownloadUrlForLayer",
+                    "ecr:BatchGetImage"
                   ],
                   "Resource": "*"
+                },
+                {
+                  "Action": [
+                    "kms:Decrypt"
+                  ],
+                  "Effect": "Allow",
+                  "Resource": { "Fn::Join" : [ "", ["arn:aws:kms:", { "Ref" : "AWS::Region" }, ":" , { "Ref" : "Account" }, ":key/", { "Ref" : "CredstashKey" }]] }
+                },
+                {
+                  "Action": [
+                    "dynamodb:GetItem",
+                    "dynamodb:Query",
+                    "dynamodb:Scan"
+                  ],
+                  "Effect": "Allow",
+                  "Resource": { "Fn::Join" : ["", ["arn:aws:dynamodb:", { "Ref" : "AWS::Region" }, ":", { "Ref" : "Account" }, ":table/credential-store"]] }
                 }
               ]
             }
           }
         ]
       }
-    },    
+    },
     "EC2InstanceProfile": {
       "Type": "AWS::IAM::InstanceProfile",
       "Properties": {
@@ -327,7 +404,7 @@
       }
     }
   },
-  
+
   "Outputs" : {
     "ecsservice" : {
       "Value" : { "Ref" : "service" }
@@ -337,6 +414,9 @@
     },
     "taskdef" : {
       "Value" : { "Ref" : "taskdefinition" }
+    },
+    "InstanceSG" : {
+      "Value" : { "Fn::GetAtt" : [ "InstanceSecurityGroup", "GroupId"]}
     }
   }
 }

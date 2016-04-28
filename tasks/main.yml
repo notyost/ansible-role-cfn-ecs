@@ -4,13 +4,15 @@
     dest: "{{ ecs_template_dir }}"
 
 - name: Template the ecs stack
-  template: 
+  template:
     src: ecs.json.j2
     dest: "{{ ecs_template_dir }}/ecs.json"
 
 - name: Create cloudformation stack
   cloudformation:
     template_parameters:
+      CredstashKey: "{{ ecs_credstash_key }}"
+      Account: "{{ ecs_host_account }}"
       ContainerPort: 8081
       ContainerName: "{{ ecs_container_name }}"
       KeyName: "{{ ecs_host_keypair_name }}"
@@ -20,6 +22,9 @@
       MaxCapacity: "{{ ecs_asg_max_capacity }}"
       MinCapacity: "{{ ecs_asg_min_capacity }}"
       InstanceType: "{{ ecs_instance_type }}"
+      VPC: "{{ ecs_host_vpc }}"
+      ZoneName: "{{ ecs_zone_name }}"
+      DomainName: "{{ ecs_domain_name }}"
     stack_name: "{{ ecs_stack_name }}"
     region: "{{ region }}"
     template: "{{ ecs_template_dir }}/ecs.json"
