@@ -1,12 +1,6 @@
 {
   "AWSTemplateFormatVersion" : "2010-09-09",
   "Parameters" : {
-    "ZoneName" : {
-      "Type" : "String"
-    },
-    "DomainName" : {
-      "Type" : "String"
-    },
     "ELBAccessCIDR" : {
       "Type" : "String"
     },
@@ -154,17 +148,19 @@
         }
       }
     },
+    {% if ecs_zone_name is defined and ecs_domain_name is defined %}
     "DomainRecordSet" : {
       "Type" : "AWS::Route53::RecordSet",
       "Properties" : {
         "ResourceRecords" : [{ "Fn::GetAtt" : [ "EcsElasticLoadBalancer", "DNSName" ] }],
         "Comment" : "ECS host domain name.",
-        "HostedZoneName" : { "Ref" : "ZoneName" },
-        "Name" : { "Ref" : "DomainName" },
+        "HostedZoneName" : "{{ ecs_zone_name }}",
+        "Name" : "{{ ecs_domain_name }}",
         "Type" : "CNAME",
         "TTL" : 300
       }
     },
+    {% endif %}
     "ECSAutoScalingGroup" : {
       "Type" : "AWS::AutoScaling::AutoScalingGroup",
       "Properties" : {
