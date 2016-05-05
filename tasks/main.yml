@@ -21,8 +21,6 @@
       MinCapacity: "{{ ecs_asg_min_capacity }}"
       InstanceType: "{{ ecs_instance_type }}"
       VPC: "{{ ecs_host_vpc }}"
-      ZoneName: "{{ ecs_zone_name }}"
-      DomainName: "{{ ecs_domain_name }}"
       ELBAccessCIDR: "{{ ecs_elb_access_cidr }}"
     stack_name: "{{ ecs_stack_name }}"
     region: "{{ ecs_region }}"
