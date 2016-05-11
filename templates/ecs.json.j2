@@ -283,7 +283,7 @@
       "DependsOn": ["ECSAutoScalingGroup"],
       "Properties" : {
         "Cluster": {"Ref": "ECSCluster"},
-        "DesiredCount": "1",
+        "DesiredCount": "{{ ecs_task_count }}",
         "LoadBalancers": [
           {
             "ContainerName": { "Ref" : "ContainerName" },
