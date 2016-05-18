@@ -1,5 +1,6 @@
 {
   "AWSTemplateFormatVersion" : "2010-09-09",
+  "Description" : "{{ ecs_stack_description | default('') }}",
   "Parameters" : {
     "ELBAccessCIDR" : {
       "Type" : "String"
@@ -182,14 +183,14 @@
       },
       "CreationPolicy" : {
         "ResourceSignal" : {
-          "Timeout" : "PT45M"
+          "Timeout" : "{{ ecs_creation_timeout }}"
         }
       },
       "UpdatePolicy": {
         "AutoScalingRollingUpdate": {
           "MinInstancesInService": "1",
           "MaxBatchSize": "1",
-          "PauseTime" : "PT45M",
+          "PauseTime" : "{{ ecs_update_timeout }}",
           "WaitOnResourceSignals": "true"
         }
       }
