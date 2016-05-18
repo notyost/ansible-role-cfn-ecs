@@ -458,6 +458,9 @@
     },
     "InstanceSG" : {
       "Value" : { "Fn::GetAtt" : [ "InstanceSecurityGroup", "GroupId"]}
+    },
+    "ECSELB" : {
+      "Value" : { "Ref" : "EcsElasticLoadBalancer" }
     }
   }
 }
