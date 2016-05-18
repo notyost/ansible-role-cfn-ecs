@@ -26,4 +26,4 @@
     region: "{{ ecs_region }}"
     template: "{{ ecs_template_dir }}/ecs.json"
     security_token: "{{ lookup('env','AWS_SESSION_TOKEN' ) }}"
-    tags: "{{ tags }}"
+    tags: "{{ ecs_tags }}"

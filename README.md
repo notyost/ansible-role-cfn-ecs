@@ -17,6 +17,7 @@
 | ecs_elb_access_cidr | yes | | The CIDR range of users of the ELB |
 | ecs_container_port | yes | | Port to run the container on |
 | ecs_host_ami | yes | | AMI for the host instance |
+| ecs_tags | yes | | Set of tags to use with the ECS stack |
 | ecs_asg_desired_capacity | no | 2 | Desired capacity for the ASG used for ECS |
 | ecs_asg_max_capacity | no | 2 | Max capacity for the ASG used by ECS |
 | ecs_asg_min_capacity | no | 1 | Min capacity for the ASG used by ECS |
@@ -104,7 +105,7 @@
     ecs_host_ami: "ami-1234567890"
     ecs_subnet: "subnet-1234567890"
     ecs_host_keypair_name: "some-keypair"
-    tags:
+    ecs_tags:
         "Name" : "some-instance-tag"
   roles:
     - role: ecs
