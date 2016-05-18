@@ -170,10 +170,10 @@
         "MaxSize" : { "Ref" : "MaxCapacity" },
         "DesiredCapacity" : { "Ref" : "DesiredCapacity" },
         "Tags" : [
-          {% for tag in tags.keys() %}
+          {% for tag in ecs_tags.keys() %}
             {
               "Key" : "{{ tag }}",
-              "Value" : "{{ tags[tag] }}",
+              "Value" : "{{ ecs_tags[tag] }}",
               "PropagateAtLaunch" : true
             }
           {% if not loop.last %}, {% endif %}
