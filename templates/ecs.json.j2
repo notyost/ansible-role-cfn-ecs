@@ -70,14 +70,21 @@
         "ContainerDefinitions" : [
           {% for container in ecs_containers %}
           {
-            "Name": { "Ref" : "ContainerName" },
+            "Name": "{{ container.name }}",
             {% if container.cpu is defined %}
             "Cpu": "{{ container.cpu }}",
             {% endif %}
-            "Essential": "true",
             "Image": "{{ container.image }}",
             {% if container.memory is defined %}
             "Memory": "{{ container.memory }}",
+            {% endif %}
+            {% if container.links is defined %}
+            "Links" : [
+              {% for link in container.links %}
+              "{{ link }}"
+              {% if not loop.last %}, {% endif %}
+              {% endfor %}
+            ],
             {% endif %}
             {% if container.mount_points is defined %}
             "MountPoints": [
@@ -90,12 +97,15 @@
               {% endfor %}
             ],
             {% endif %}
+            {% if container.port_mappings is defined %}
             "PortMappings": [
               {% for host_port in container.port_mappings.keys() %}
               { "HostPort": "{{ host_port }}", "ContainerPort": "{{ container.port_mappings[host_port] }}" }
               {% if not loop.last %}, {% endif %}
               {% endfor %}
-            ]
+            ],
+            {% endif %}
+            "Essential": "true"
           }
           {% if not loop.last %}, {% endif %}
           {% endfor %}
