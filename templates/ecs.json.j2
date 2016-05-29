@@ -139,6 +139,9 @@
       "Properties" : {
         "Subnets" : { "Ref" : "SubnetID" },
         "SecurityGroups" : [ { "Fn::GetAtt" : ["ELBSecurityGroup","GroupId"] } ],
+        "LBCookieStickinessPolicy" : {
+          "PolicyName" : "EcsElbPolicy"
+        },
         "Listeners" : [
           {% for listener in ecs_elb.listeners %}
           {
