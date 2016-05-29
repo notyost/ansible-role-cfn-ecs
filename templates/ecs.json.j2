@@ -140,7 +140,7 @@
         "Subnets" : { "Ref" : "SubnetID" },
         "SecurityGroups" : [ { "Fn::GetAtt" : ["ELBSecurityGroup","GroupId"] } ],
         "LBCookieStickinessPolicy" : [{
-          "PolicyName" : "EcsElbPolicy"
+          "PolicyName" : "EcsElbStickiness"
         }],
         "Listeners" : [
           {% for listener in ecs_elb.listeners %}
@@ -148,7 +148,8 @@
             "LoadBalancerPort" : "{{ listener.elb_port }}",
             "InstancePort" : "{{ listener.instance_port }}",
             "Protocol" : "{{ listener.protocol }}",
-            "SSLCertificateId" : "{{ listener.certificate }}"
+            "SSLCertificateId" : "{{ listener.certificate }}",
+            "PolicyNames" : [ "EcsElbStickiness" ]
           }
           {% if not loop.last %}, {% endif %}
           {% endfor %}
