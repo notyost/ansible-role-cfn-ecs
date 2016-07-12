@@ -1,0 +1,47 @@
+---
+- name: test - create ecs cluster and iam role
+  hosts: test
+  remote_user: root
+  vars:
+    ecs_asg_desired_capacity: 1
+    ecs_stack_name: "test-ecs-cluster-stack"
+  vars_files:
+    - vars/test_aws_info.yml
+  roles:
+    - role: ansible-role-cfn-ecs
+    - role: ansible-role-module-cfn-lookup
+  post_tasks:
+    - cfn_lookup:
+        stack_name: "{{ ecs_stack_name }}-iam-role"
+        fact: "iam_output"
+        region: "{{ ecs_region }}"
+
+- name: test - remove ecs cluster but leave the iam role
+  hosts: test
+  remote_user: root
+  vars:
+    ecs_cluster_stack_state: "absent"
+    ecs_stack_name: "test-ecs-cluster-stack"
+    cleanup_iam_role: false
+  roles:
+    - role: ansible-role-cfn-ecs
+
+- name: test - create ecs cluster using iam role from first test
+  hosts: test
+  remote_user: root
+  vars:
+    ecs_asg_desired_capacity: 1
+    ecs_iam_profile: "{{ iam_output.ProfileName }}"
+  vars_files:
+    - vars/test_aws_info.yml
+  roles:
+    - role: ansible-role-cfn-ecs
+
+- name: test - remove ecs cluster and iam role
+  hosts: test
+  remote_user: root
+  vars:
+    ecs_cluster_stack_state: "absent"
+    ecs_stack_name: "test-ecs-cluster-stack"
+  roles:
+    - role: ansible-role-cfn-ecs

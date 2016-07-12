@@ -2,184 +2,56 @@
   "AWSTemplateFormatVersion" : "2010-09-09",
   "Description" : "{{ ecs_stack_description | default('') }}",
   "Parameters" : {
-    "ELBAccessCIDR" : {
-      "Type" : "String"
-    },
     "VPC" : {
       "Type" : "AWS::EC2::VPC::Id"
     },
-    "ContainerName" : {
-      "Type" : "String"
-    },
-    "ContainerPort" : {
-      "Type" : "Number"
-    },
-    "KeyName": {
+    "KeyName" : {
       "Type": "AWS::EC2::KeyPair::KeyName",
       "Description": "Name of an existing EC2 KeyPair to enable SSH access to the ECS instances"
     },
     "HostAMI" : {
       "Type" : "AWS::EC2::Image::Id"
     },
-    "SubnetID": {
+    "SubnetIDs" : {
       "Type": "List<AWS::EC2::Subnet::Id>",
       "Description": "List of an existing subnet IDs to use for the load balancer and auto scaling group"
     },
-    "DesiredCapacity": {
+    "DesiredCapacity" : {
       "Type": "Number",
       "Description": "Number of instances to launch in your ECS cluster"
     },
-    "MinCapacity": {
+    "MinCapacity" : {
       "Type": "Number",
       "Description": "Min number of instances that can be launched in your ECS cluster"
     },
-    "MaxCapacity": {
+    "MaxCapacity" : {
       "Type": "Number",
       "Description": "Maximum number of instances that can be launched in your ECS cluster"
     },
     "InstanceType" : {
       "Description" : "The EC2 instance type",
       "Type" : "String",
-      "AllowedValues" : [ "t2.nano", "t2.micro", "t2.small", "t2.medium", "m3.medium", "m3.large", "m3.xlarge",
-"m3.2xlarge", "c3.large", "c3.xlarge", "c3.2xlarge", "c3.4xlarge", "c3.8xlarge", "c4.large", "c4.xlarge",
-"c4.2xlarge", "c4.4xlarge", "c4.8xlarge", "r3.large", "r3.xlarge", "r3.2xlarge", "r3.4xlarge",
-"r3.8xlarge",
-"i2.xlarge", "i2.2xlarge", "i2.4xlarge", "i2.8xlarge", "d2.xlarge", "d2.2xlarge", "d2.4xlarge",
-"d2.8xlarge",
-"hi1.4xlarge", "hs1.8xlarge", "cr1.8xlarge", "cc2.8xlarge"],
+      "AllowedValues" : [ "t2.nano", "t2.micro", "t2.small", "t2.medium", "m3.medium", "m3.large", "m3.xlarge", "m3.2xlarge", "c3.large", "c3.xlarge", "c3.2xlarge", "c3.4xlarge", "c3.8xlarge", "c4.large", "c4.xlarge", "c4.2xlarge", "c4.4xlarge", "c4.8xlarge", "r3.large", "r3.xlarge", "r3.2xlarge", "r3.4xlarge", "r3.8xlarge", "i2.xlarge", "i2.2xlarge", "i2.4xlarge", "i2.8xlarge", "d2.xlarge", "d2.2xlarge", "d2.4xlarge", "d2.8xlarge", "hi1.4xlarge", "hs1.8xlarge", "cr1.8xlarge", "cc2.8xlarge"
+      ],
       "ConstraintDescription" : "must be a valid EC2 instance type."
     },
-    "SSHLocation" : {
-      "Description" : " The IP address range that can be used to SSH to the EC2 instances",
-      "Type": "String",
-      "MinLength": "9",
-      "MaxLength": "18",
-      "Default": "0.0.0.0/0",
-      "AllowedPattern": "(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})/(\\d{1,2})",
-      "ConstraintDescription": "must be a valid IP CIDR range of the form x.x.x.x/x."
+    "SecurityGroupIDs" : {
+      "Description" : "SecurityGroupIDs to add to cluster hosts",
+      "Type": "List<AWS::EC2::SecurityGroup::Id>"
+    },
+    "InstanceProfile" : {
+      "Description" : "InstanceProfileArn",
+      "Type": "String"
     }
   },
-
   "Resources" : {
-    "ECSCluster": {
+    "ECSCluster" : {
       "Type": "AWS::ECS::Cluster"
     },
-    "taskdefinition": {
-      "Type": "AWS::ECS::TaskDefinition",
-      "Properties" : {
-        "ContainerDefinitions" : [
-          {% for container in ecs_containers %}
-          {
-            "Name": "{{ container.name }}",
-            {% if container.cpu is defined %}
-            "Cpu": "{{ container.cpu }}",
-            {% endif %}
-            "Image": "{{ container.image }}",
-            {% if container.memory is defined %}
-            "Memory": "{{ container.memory }}",
-            {% endif %}
-            {% if container.links is defined %}
-            "Links" : [
-              {% for link in container.links %}
-              "{{ link }}"
-              {% if not loop.last %}, {% endif %}
-              {% endfor %}
-            ],
-            {% endif %}
-            {% if container.mount_points is defined %}
-            "MountPoints": [
-              {% for path in container.mount_points.keys() %}
-              {
-                "ContainerPath": "{{ path }}",
-                "SourceVolume": "{{ container.ecs_mount_points[path] }}"
-              }
-              {% if not loop.last %}, {% endif %}
-              {% endfor %}
-            ],
-            {% endif %}
-            {% if container.port_mappings is defined %}
-            "PortMappings": [
-              {% for host_port in container.port_mappings.keys() %}
-              { "HostPort": "{{ host_port }}", "ContainerPort": "{{ container.port_mappings[host_port] }}" }
-              {% if not loop.last %}, {% endif %}
-              {% endfor %}
-            ],
-            {% endif %}
-            "Essential": "true"
-          }
-          {% if not loop.last %}, {% endif %}
-          {% endfor %}
-        ]
-        {% if ecs_volumes is defined %}
-        ,
-        "Volumes": [
-          {% for volume in ecs_volumes %}
-          { "Name": "{{ volume }}" }
-          {% if not loop.last %}, {% endif %}
-          {% endfor %}
-        ]
-        {% endif %}
-      }
-    },
-    "ELBSecurityGroup" : {
-      "Type" : "AWS::EC2::SecurityGroup",
-      "Properties" : {
-        "GroupDescription" : "Security group for logging nginx auth elb",
-        "SecurityGroupIngress" : [ {
-          "CidrIp" : { "Ref" : "ELBAccessCIDR" },
-          "FromPort" : "443",
-          "IpProtocol" : "tcp",
-          "ToPort" : "443"
-        } ],
-        "VpcId" : { "Ref" : "VPC" }
-      }
-    },
-    "EcsElasticLoadBalancer" : {
-      "Type" : "AWS::ElasticLoadBalancing::LoadBalancer",
-      "Properties" : {
-        "Subnets" : { "Ref" : "SubnetID" },
-        "SecurityGroups" : [ { "Fn::GetAtt" : ["ELBSecurityGroup","GroupId"] } ],
-        "LBCookieStickinessPolicy" : [{
-          "PolicyName" : "EcsElbStickiness"
-        }],
-        "Listeners" : [
-          {% for listener in ecs_elb.listeners %}
-          {
-            "LoadBalancerPort" : "{{ listener.elb_port }}",
-            "InstancePort" : "{{ listener.instance_port }}",
-            "Protocol" : "{{ listener.protocol }}",
-            "SSLCertificateId" : "{{ listener.certificate }}",
-            "PolicyNames" : [ "EcsElbStickiness" ]
-          }
-          {% if not loop.last %}, {% endif %}
-          {% endfor %}
-        ],
-        "HealthCheck" : {
-          "Target" : "{{ ecs_elb.health_check.target }}",
-          "HealthyThreshold" : "{{ ecs_elb.health_check.healthy }}",
-          "UnhealthyThreshold" : "{{ ecs_elb.health_check.unhealthy }}",
-          "Interval" : "{{ ecs_elb.health_check.interval }}",
-          "Timeout" : "{{ ecs_elb.health_check.timeout }}"
-        }
-      }
-    },
-    {% if ecs_zone_name is defined and ecs_domain_name is defined %}
-    "DomainRecordSet" : {
-      "Type" : "AWS::Route53::RecordSet",
-      "Properties" : {
-        "ResourceRecords" : [{ "Fn::GetAtt" : [ "EcsElasticLoadBalancer", "DNSName" ] }],
-        "Comment" : "ECS host domain name.",
-        "HostedZoneName" : "{{ ecs_zone_name }}",
-        "Name" : "{{ ecs_domain_name }}",
-        "Type" : "CNAME",
-        "TTL" : 300
-      }
-    },
-    {% endif %}
     "ECSAutoScalingGroup" : {
       "Type" : "AWS::AutoScaling::AutoScalingGroup",
       "Properties" : {
-        "VPCZoneIdentifier" : { "Ref" : "SubnetID" },
+        "VPCZoneIdentifier" : { "Ref" : "SubnetIDs" },
         "LaunchConfigurationName" : { "Ref" : "ContainerInstances" },
         "MinSize" : { "Ref" : "MinCapacity" },
         "MaxSize" : { "Ref" : "MaxCapacity" },
@@ -207,19 +79,6 @@
           "PauseTime" : "{{ ecs_update_timeout }}",
           "WaitOnResourceSignals": "true"
         }
-      }
-    },
-    "InstanceSecurityGroup" : {
-      "Type" : "AWS::EC2::SecurityGroup",
-      "Properties" : {
-        "SecurityGroupIngress" : [ {
-          "SourceSecurityGroupId" : { "Fn::GetAtt" : ["ELBSecurityGroup", "GroupId"] },
-          "IpProtocol" : "tcp",
-          "FromPort" : { "Ref" : "ContainerPort" },
-          "ToPort" : { "Ref" : "ContainerPort" }
-        } ],
-        "GroupDescription" : "Security Group for nginx cluster instance.",
-        "VpcId" : { "Ref" : "VPC" }
       }
     },
     "ContainerInstances": {
@@ -256,23 +115,21 @@
                 ]]}
               }
             },
-
             "services" : {
               "sysvinit" : {
-                "cfn-hup" : { "enabled" : "true", "ensureRunning" : "true", "files" :
-["/etc/cfn/cfn-hup.conf", "/etc/cfn/hooks.d/cfn-auto-reloader.conf"] }
+                "cfn-hup" : { "enabled" : "true", "ensureRunning" : "true", "files" : ["/etc/cfn/cfn-hup.conf", "/etc/cfn/hooks.d/cfn-auto-reloader.conf"] }
               }
             }
           }
         }
       },
       "Properties": {
+        "KeyName": { "Ref" : "KeyName" },
         "ImageId" : { "Ref" : "HostAMI" },
         "AssociatePublicIpAddress" : "true",
         "InstanceType"   : { "Ref" : "InstanceType" },
-        "IamInstanceProfile": { "Ref": "EC2InstanceProfile" },
-        "KeyName"        : { "Ref" : "KeyName" },
-        "SecurityGroups" : [{ "Fn::GetAtt" : ["InstanceSecurityGroup","GroupId"] }],
+        "IamInstanceProfile": { "Ref": "InstanceProfile" },
+        "SecurityGroups" : { "Ref" : "SecurityGroupIDs" },
         "UserData"       : { "Fn::Base64" : { "Fn::Join" : ["", [
              "#!/bin/bash -xe\n",
              "yum install -y aws-cfn-bootstrap\n",
@@ -292,189 +149,11 @@
              "         --region ", { "Ref" : "AWS::Region" }, "\n"
         ]]}}
       }
-    },
-    "service": {
-      "Type": "AWS::ECS::Service",
-      "DependsOn": ["ECSAutoScalingGroup"],
-      "Properties" : {
-        "Cluster": {"Ref": "ECSCluster"},
-        "DesiredCount": "{{ ecs_task_count }}",
-        "LoadBalancers": [
-          {
-            "ContainerName": { "Ref" : "ContainerName" },
-            "ContainerPort": { "Ref" : "ContainerPort" },
-            "LoadBalancerName" : { "Ref" : "EcsElasticLoadBalancer" }
-          }
-        ],
-        "Role" : {"Ref":"ECSServiceRole"},
-        "TaskDefinition" : {"Ref":"taskdefinition"}
-      }
-    },
-    "ECSServiceRole": {
-      "Type": "AWS::IAM::Role",
-      "Properties": {
-        "AssumeRolePolicyDocument": {
-          "Statement": [
-            {
-              "Effect": "Allow",
-              "Principal": {
-                "Service": [
-                  "ecs.amazonaws.com"
-                ]
-              },
-              "Action": [
-                "sts:AssumeRole"
-              ]
-            }
-          ]
-        },
-        "Path": "/",
-        "Policies": [
-          {
-            "PolicyName": "ecs-service",
-            "PolicyDocument": {
-              "Statement": [
-                {
-                  "Effect": "Allow",
-                  "Action": [
-                    "elasticloadbalancing:Describe*",
-                    "elasticloadbalancing:DeregisterInstancesFromLoadBalancer",
-                    "elasticloadbalancing:RegisterInstancesWithLoadBalancer",
-                    "ec2:Describe*",
-                    "ec2:AuthorizeSecurityGroupIngress"
-                  ],
-                  "Resource": "*"
-                }
-              ]
-            }
-          }
-        ]
-      }
-    },
-    "EC2Role": {
-      "Type": "AWS::IAM::Role",
-      "Properties": {
-        "AssumeRolePolicyDocument": {
-          "Statement": [
-            {
-              "Effect": "Allow",
-              "Principal": {
-                "Service": [
-                  "ec2.amazonaws.com"
-                ]
-              },
-              "Action": [
-                "sts:AssumeRole"
-              ]
-            }
-          ]
-        },
-        "Path": "/",
-        "Policies": [
-          {
-            "PolicyName": "ecs-service",
-            "PolicyDocument": {
-              "Statement": [
-                {
-                  "Effect": "Allow",
-                  "Action": [
-                    "ecs:CreateCluster",
-                    "ecs:DeregisterContainerInstance",
-                    "ecs:DiscoverPollEndpoint",
-                    "ecs:Poll",
-                    "ecs:RegisterContainerInstance",
-                    "ecs:StartTelemetrySession",
-                    "ecs:Submit*",
-                    "ecr:GetAuthorizationToken",
-                    "ecr:BatchCheckLayerAvailability",
-                    "ecr:GetDownloadUrlForLayer",
-                    "ecr:BatchGetImage"
-                  ],
-                  "Resource": "*"
-                }
-                {% if ecs_use_elastic_ips is defined and ecs_use_elastic_ips == 'true'  %}
-                ,
-                {
-                  "Effect": "Allow",
-                  "Action": [
-                  "ec2:AssociateAddress",
-                  "ec2:Describe*"
-                  ],
-                  "Resource": "*"
-                },
-                {
-                  "Effect": "Allow",
-                  "Action": "elasticloadbalancing:Describe*",
-                  "Resource": "*"
-                },
-                {
-                  "Effect": "Allow",
-                  "Action": [
-                    "cloudwatch:ListMetrics",
-                    "cloudwatch:GetMetricStatistics",
-                    "cloudwatch:Describe*"
-                  ],
-                  "Resource": "*"
-                },
-                {
-                  "Effect": "Allow",
-                  "Action": "autoscaling:Describe*",
-                  "Resource": "*"
-                }
-                {% endif %}
-                {% if ecs_credstash_kms_key_arn is defined %}
-                ,
-                {
-                  "Action": [
-                    "kms:Decrypt"
-                  ],
-                  "Effect": "Allow",
-                  "Resource": "{{ ecs_credstash_kms_key_arn }}"
-                },
-                {
-                  "Action": [
-                    "dynamodb:GetItem",
-                    "dynamodb:Query",
-                    "dynamodb:Scan"
-                  ],
-                  "Effect": "Allow",
-                  "Resource": "{{ ecs_credstash_table_arn }}"
-                }
-                {% endif %}
-              ]
-            }
-          }
-        ]
-      }
-    },
-    "EC2InstanceProfile": {
-      "Type": "AWS::IAM::InstanceProfile",
-      "Properties": {
-        "Path": "/",
-        "Roles": [
-          {
-            "Ref": "EC2Role"
-          }
-        ]
-      }
     }
   },
-
   "Outputs" : {
-    "ecsservice" : {
-      "Value" : { "Ref" : "service" }
-    },
     "ecscluster" : {
       "Value" : { "Ref" : "ECSCluster" }
-    },
-    "taskdef" : {
-      "Value" : { "Ref" : "taskdefinition" }
-    },
-    "InstanceSG" : {
-      "Value" : { "Fn::GetAtt" : [ "InstanceSecurityGroup", "GroupId"]}
-    },
-    "ECSELB" : {
-      "Value" : { "Ref" : "EcsElasticLoadBalancer" }
     }
   }
 }

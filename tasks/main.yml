@@ -8,22 +8,32 @@
     src: ecs.json.j2
     dest: "{{ ecs_template_dir }}/ecs.json"
 
-- name: Create cloudformation stack
+- name: Create or remove cloudformation stack
   cloudformation:
     template_parameters:
-      ContainerPort: 8081
-      ContainerName: "{{ ecs_container_name }}"
-      KeyName: "{{ ecs_host_keypair_name }}"
+      KeyName: "{{ ecs_host_keypair_name|default(omit) }}"
       HostAMI: "{{ ecs_host_ami }}"
-      SubnetID: "{{ ecs_subnet }}"
+      SubnetIDs: "{{ ecs_subnets|default(omit) }}"
       DesiredCapacity: "{{ ecs_asg_desired_capacity }}"
       MaxCapacity: "{{ ecs_asg_max_capacity }}"
       MinCapacity: "{{ ecs_asg_min_capacity }}"
       InstanceType: "{{ ecs_instance_type }}"
-      VPC: "{{ ecs_host_vpc }}"
-      ELBAccessCIDR: "{{ ecs_elb_access_cidr }}"
+      VPC: "{{ ecs_host_vpc|default(omit) }}"
+      InstanceProfile: "{% if ecs_iam_profile is defined %}{{ ecs_iam_profile }}{% else %}{{ iam_role_cf_output.stack_outputs.ProfileName }}{% endif %}"
+      SecurityGroupIDs: "{{ ecs_sg_ids|default(omit) }}"
     stack_name: "{{ ecs_stack_name }}"
     region: "{{ ecs_region }}"
     template: "{{ ecs_template_dir }}/ecs.json"
-    security_token: "{{ lookup('env','AWS_SESSION_TOKEN' ) }}"
+    security_token: "{{ lookup('env','AWS_SESSION_TOKEN')|default(omit, true) }}"
     tags: "{{ ecs_tags }}"
+    state: "{{ ecs_cluster_stack_state }}"
+  register: ecs_cluster_cf_output
+
+- name: cleanup iam role stack
+  cloudformation:
+    stack_name: "{{ ecs_iam_role_stack_name }}"
+    state: "absent"
+    region: "{{ ecs_region }}"
+  when: cleanup_iam_role and
+        ecs_iam_role_stack_name is defined and
+        ecs_cluster_stack_state == 'absent'

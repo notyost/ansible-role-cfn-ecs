@@ -8,3 +8,28 @@ ecs_max_cluster_size: "1"
 ecs_instance_type: "t2.micro"
 ecs_creation_timeout: "PT45M"
 ecs_update_timeout: "PT45M"
+ecs_tags: {}
+ecs_host_ami: ami-ae0acdce
+ecs_region: "us-west-2"
+ecs_cluster_stack_state: "present"
+# remove the iam role when we remove the ecs cluster
+cleanup_iam_role: true
+ecs_iam_role_stack_name: "{{ ecs_stack_name }}-iam-role"
+# to change the created role, define vars re: iam role, role in playbook or at higher prio
+# ecs_iam_role_policies is passed to iam role as iam_role_policies
+ecs_iam_role_policies:
+  - name: ecs_default_policy
+    policy:
+      Version: "2012-10-17"
+      Statement:
+        - "Effect": "Allow"
+          "Action": ['logs:CreateLogGroup', 'logs:CreateLogStream', 'logs:PutLogEvents', 'cloudwatch:ListMetrics', 'cloudwatch:GetMetricStatistics', 'cloudwatch:Describe*']
+          "Resource": "*"
+        - "Effect": "Allow"
+          "Action": ['ecs:CreateCluster', 'ecs:DeregisterContainerInstance', 'ecs:DiscoverPollEndpoint', 'ecs:Poll', 'ecs:RegisterContainerInstance', 'ecs:StartTelemetrySession', 'ecs:Submit*']
+          "Resource": "*"
+        - "Effect": "Allow"
+          "Action": ['ec2:AssociateAddress', 'ec2:Describe*', 'elasticloadbalancing:Describe*', 'autoscaling:Describe*']
+          "Resource": "*"
+# otherwise to use an existing iam profile created some other way, define:
+# ecs_iam_profile: "name of an existing iam profile"
