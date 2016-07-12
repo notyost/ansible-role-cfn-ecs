@@ -1,0 +1,2 @@
+- src: https://github.com/mGageTechOps/ansible-role-cfn-iam-role
+- src: https://github.com/mGageTechOps/ansible-role-module-cfn-lookup
