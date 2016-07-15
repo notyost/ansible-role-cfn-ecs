@@ -21,7 +21,7 @@
       VPC: "{{ ecs_host_vpc|default(omit) }}"
       InstanceProfile: "{% if ecs_iam_profile is defined %}{{ ecs_iam_profile }}{% else %}{{ iam_role_cf_output.stack_outputs.ProfileName }}{% endif %}"
       SecurityGroupIDs: "{{ ecs_sg_ids|default(omit) }}"
-      FileSystem: "{{ ecs_efs_id|default(omit) }}"
+      FileSystemId: "{{ ecs_efs_id|default(omit) }}"
     stack_name: "{{ ecs_stack_name }}"
     region: "{{ ecs_region }}"
     template: "{{ ecs_template_dir }}/ecs.json"

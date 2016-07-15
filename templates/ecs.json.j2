@@ -43,9 +43,10 @@
       "Description" : "InstanceProfileArn",
       "Type": "String"
     },
-   "Filesystem" : {
-     "Description" : "EFS FilesystemID",
+   "FileSystemId" : {
+     "Description" : "EFS File system ID",
      "Type": "AWS::EFS::FileSystem"
+    }
   },
   "Resources" : {
     "ECSCluster" : {
@@ -135,9 +136,8 @@
         "SecurityGroups" : { "Ref" : "SecurityGroupIDs" },
         "UserData"       : { "Fn::Base64" : { "Fn::Join" : ["", [
              "#!/bin/bash -xe\n",
-             "yum install -y aws-cfn-bootstrap\n",
-             "yum install -y nfs-utils\n",
-             "echo "$(curl -s http://169.254.169.254/latest/meta-data/placement/availability-zone).{ "Ref": "FileSystem" }.efs.{ "Ref" : "AWS::Region" }.amazonaws.com:/    /mnt/efs  nfs4    defaults" >> /etc/fstab\n",
+             "yum install -y nfs-utils aws-cfn-bootstrap\n",
+             "echo \\\"$(curl -s http://169.254.169.254/latest/meta-data/placement/availability-zone).{ \\\"Ref\\\": \\\"FileSystem\\\" }.efs.{ \\\"Ref\\\" : \\\"AWS::Region\\\" }.amazonaws.com:/    /mnt/efs  nfs4    defaults\\\" >> /etc/fstab\n",
              "mkdir /mnt/efs\n",
              "mount -a\n",
              {% if ecs_use_elastic_ips is defined and ecs_use_elastic_ips == 'true'  %}
