@@ -12,6 +12,7 @@ ecs_tags: {}
 ecs_host_ami: ami-ae0acdce
 ecs_region: "us-west-2"
 ecs_cluster_stack_state: "present"
+ecs_efs_id: ""
 # remove the iam role when we remove the ecs cluster
 cleanup_iam_role: true
 ecs_iam_role_stack_name: "{{ ecs_stack_name }}-iam-role"

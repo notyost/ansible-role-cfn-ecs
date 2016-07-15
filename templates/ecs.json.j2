@@ -42,7 +42,10 @@
     "InstanceProfile" : {
       "Description" : "InstanceProfileArn",
       "Type": "String"
-    }
+    },
+   "Filesystem" : {
+     "Description" : "EFS FilesystemID",
+     "Type": "AWS::EFS::FileSystem"
   },
   "Resources" : {
     "ECSCluster" : {
@@ -133,6 +136,10 @@
         "UserData"       : { "Fn::Base64" : { "Fn::Join" : ["", [
              "#!/bin/bash -xe\n",
              "yum install -y aws-cfn-bootstrap\n",
+             "yum install -y nfs-utils\n",
+             "echo "$(curl -s http://169.254.169.254/latest/meta-data/placement/availability-zone).{ "Ref": "FileSystem" }.efs.{ "Ref" : "AWS::Region" }.amazonaws.com:/    /mnt/efs  nfs4    defaults" >> /etc/fstab\n",
+             "mkdir /mnt/efs\n",
+             "mount -a\n",
              {% if ecs_use_elastic_ips is defined and ecs_use_elastic_ips == 'true'  %}
              "yum install -y python27-pip\n",
              "/usr/bin/pip install aws-ec2-assign-elastic-ip==0.5.0\n",
