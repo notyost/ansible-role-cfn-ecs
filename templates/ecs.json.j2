@@ -133,6 +133,7 @@
         "UserData"       : { "Fn::Base64" : { "Fn::Join" : ["", [
              "#!/bin/bash -xe\n",
              "yum install -y aws-cfn-bootstrap\n",
+             "ecs_efs_id={{ ecs_efs_id }}\n",
              "if [ -n $ecs_efs_id ]; then\n",
              "echo \\\"$(curl -s http://169.254.169.254/latest/meta-data/placement/availability-zone).\\\"{ $ecs_efs_id }\\\".efs.{ \\\"Ref\\\" : \\\"AWS::Region\\\" }.amazonaws.com:/    /mnt/efs  nfs4    defaults\\\" >> /etc/fstab && mkdir /mnt/efs && yum install -y nfs-utils nfs-common && mount -a\n",
              "else\n",
