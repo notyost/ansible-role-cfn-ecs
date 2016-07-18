@@ -30,6 +30,7 @@
 | ecs_credstash_table_arn | no | | If an application on the cluster requires a secret from credstash, provide the pertinent dynamodb table |
 | ecs_build_dir | no | build | Directory to be used to store temporary build artifacts |
 | ecs_template_dir | no | <strong>ecs_build_dir</strong> | Directory be used to store generated templates |
+| ecs_efs_id | no | | The efs filesystem id you want to mount |
 
 ### Attributes of ecs_containers
 
@@ -78,6 +79,7 @@
     ecs_zone_name: "{{ hosted_zone }}."
     ecs_domain_name: "host.{{ hosted_zone }}"
     ecs_host_vpc: "vpc-123456789"
+    ecs_efs_id: "fs-12345abc"
     ecs_stack_name: "test-ecs"
     ecs_credstash_table_arn: "arn:aws:dynamodb:us-west-2:123456789012:table/some-dynamodb-table"
     ecs_credstash_kms_key_arn: "arn:aws:kms:us-west-2:123456789012:key/some-kms-key-id"

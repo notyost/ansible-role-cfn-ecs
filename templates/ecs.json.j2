@@ -133,10 +133,10 @@
         "UserData"       : { "Fn::Base64" : { "Fn::Join" : ["", [
              "#!/bin/bash -xe\n",
              "yum install -y aws-cfn-bootstrap\n",
-             "if [ -n "$ecs_efs_id" ]; then\n",
-             "echo \\\"$(curl -s http://169.254.169.254/latest/meta-data/placement/availability-zone).$ecs_efs_id.efs.{ \\\"Ref\\\" : \\\"AWS::Region\\\" }.amazonaws.com:/    /mnt/efs  nfs4    defaults\\\" >> /etc/fstab && mkdir /mnt/efs && yum install -y nfs-utils nfs-common && mount -a\n",
+             "if [ -n $ecs_efs_id ]; then\n",
+             "echo \\\"$(curl -s http://169.254.169.254/latest/meta-data/placement/availability-zone).\\\"{ $ecs_efs_id }\\\".efs.{ \\\"Ref\\\" : \\\"AWS::Region\\\" }.amazonaws.com:/    /mnt/efs  nfs4    defaults\\\" >> /etc/fstab && mkdir /mnt/efs && yum install -y nfs-utils nfs-common && mount -a\n",
              "else\n",
-             "echo "continuing without EFS requirements and mounts\n",
+             "echo \\\"continuing without EFS requirements and mounts\\\"\n",
              {% if ecs_use_elastic_ips is defined and ecs_use_elastic_ips == 'true'  %}
              "yum install -y python27-pip\n",
              "/usr/bin/pip install aws-ec2-assign-elastic-ip==0.5.0\n",
