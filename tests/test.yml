@@ -30,6 +30,7 @@
   hosts: test
   remote_user: root
   vars:
+    ecs_stack_name: "test-ecs-cluster-stack"
     ecs_asg_desired_capacity: 1
     ecs_iam_profile: "{{ iam_output.ProfileName }}"
   vars_files:
