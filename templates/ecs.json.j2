@@ -131,11 +131,12 @@
         "IamInstanceProfile": { "Ref": "InstanceProfile" },
         "SecurityGroups" : { "Ref" : "SecurityGroupIDs" },
         "UserData"       : { "Fn::Base64" : { "Fn::Join" : ["", [
-             "#!/bin/bash -xe\n",
-             "yum install -y aws-cfn-bootstrap\n",
              {% if ecs_efs_id != '' %}
+             "#cloud-boothook\n",
              "echo $(curl -s http://169.254.169.254/latest/meta-data/placement/availability-zone).{{ ecs_efs_id }}.efs.{{ ecs_region }}.amazonaws.com:/    /mnt/efs  nfs4    defaults>> /etc/fstab && mkdir /mnt/efs && yum install -y nfs-utils nfs-common && mount -a\n",
              {% endif %}
+             "#!/bin/bash -xe\n",
+             "yum install -y aws-cfn-bootstrap\n",
              {% if ecs_use_elastic_ips is defined and ecs_use_elastic_ips == 'true'  %}
              "yum install -y python27-pip\n",
              "/usr/bin/pip install aws-ec2-assign-elastic-ip==0.5.0 awscli==1.10.49\n",
