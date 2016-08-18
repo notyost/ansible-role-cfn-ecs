@@ -140,10 +140,10 @@
              {% if ecs_use_elastic_ips is defined and ecs_use_elastic_ips == 'true'  %}
              "yum install -y python27-pip\n",
              "/usr/bin/pip install aws-ec2-assign-elastic-ip==0.5.0 awscli==1.10.49\n",
-             {% if eip_valid_ips is defined %}
+             {% if ecs_eip_valid_ips is defined %}
              "AWS_CLI=\"/usr/local/bin/aws --region ", { "Ref" : "AWS::Region" }, "\"\n",
              "SEQ_TABLE_NAME=\"{{ ecs_eip_counter_table_name }}\"\n",
-             "SEQ_NAME=\"eip_counter\"\n",
+             "SEQ_NAME=\"{{ ecs_eip_counter_name }}\"\n",
              "seq_id=$($AWS_CLI dynamodb update-item  --table-name $SEQ_TABLE_NAME --key '{ \"counter_id\": { \"S\": \"'$SEQ_NAME'\" }}' --update-expression \"SET counter_value = counter_value + :val\" --expression-attribute-values '{ \":val\":{\"N\": \"1\"} }' --return-values \"UPDATED_NEW\" --output text --query 'Attributes.{A:counter_value}' | sed s'/^.//')\n",
              "IFS=',' read -ra EIPS <<< '{{ eip_valid_ips }}'\n",
              "if [[ -z \"${EIPS[$seq_id]}\" ]]; then\n",
