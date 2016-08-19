@@ -145,7 +145,7 @@
              "SEQ_TABLE_NAME=\"{{ ecs_eip_counter_table_name }}\"\n",
              "SEQ_NAME=\"{{ ecs_eip_counter_name }}\"\n",
              "seq_id=$($AWS_CLI dynamodb update-item  --table-name $SEQ_TABLE_NAME --key '{ \"counter_id\": { \"S\": \"'$SEQ_NAME'\" }}' --update-expression \"SET counter_value = counter_value + :val\" --expression-attribute-values '{ \":val\":{\"N\": \"1\"} }' --return-values \"UPDATED_NEW\" --output text --query 'Attributes.{A:counter_value}' | sed s'/^.//')\n",
-             "IFS=',' read -ra EIPS <<< '{{ eip_valid_ips }}'\n",
+             "IFS=',' read -ra EIPS <<< '{{ ecs_eip_valid_ips }}'\n",
              "if [[ -z \"${EIPS[$seq_id]}\" ]]; then\n",
              "sleep 2m\n",
              "/usr/local/bin/aws-ec2-assign-elastic-ip --valid-ips  \"{{ eip_valid_ips }}\"\n",
