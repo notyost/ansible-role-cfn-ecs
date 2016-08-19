@@ -31,6 +31,11 @@
 | ecs_build_dir | no | build | Directory to be used to store temporary build artifacts |
 | ecs_template_dir | no | <strong>ecs_build_dir</strong> | Directory be used to store generated templates |
 | ecs_efs_id | no | | The efs filesystem id you want to mount |
+| ecs_use_elastic_ips | no | | If set to 'true' enable use of elastic IPs on this cluster |
+| ecs_eip_valid_ips | conditional | | A list of valid elastic IP values. Required if ecs_use_elastic_ips set to true. |
+| ecs_eip_counter_table_name | conditional | | The name of a dynamodb table that tracks which EIP to use sequentially. This exists as a work around to a race condition in the EIP assigning script. Required if 
+ecs_use_elastic_ips is set to 'true'. |
+| ecs_eip_counter_name | conditional | | The name of the counter to be used for this cluster. Required if ecs_use_elastic_ips is set to 'true'. |
 
 ### Attributes of ecs_containers
 

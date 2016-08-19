@@ -148,7 +148,7 @@
              "IFS=',' read -ra EIPS <<< '{{ ecs_eip_valid_ips }}'\n",
              "if [[ -z \"${EIPS[$seq_id]}\" ]]; then\n",
              "sleep 2m\n",
-             "/usr/local/bin/aws-ec2-assign-elastic-ip --valid-ips  \"{{ eip_valid_ips }}\"\n",
+             "/usr/local/bin/aws-ec2-assign-elastic-ip --valid-ips  \"{{ ecs_eip_valid_ips }}\"\n",
              "else\n",
              "/usr/local/bin/aws-ec2-assign-elastic-ip --valid-ips  \"${EIPS[$seq_id]}\"\n",
              "fi\n",
