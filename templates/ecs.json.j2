@@ -126,7 +126,7 @@
       "Properties": {
         "KeyName": { "Ref" : "KeyName" },
         "ImageId" : { "Ref" : "HostAMI" },
-        "AssociatePublicIpAddress" : "true",
+        "AssociatePublicIpAddress" : "{{ ecs_public_ip }}",
         "InstanceType"   : { "Ref" : "InstanceType" },
         "IamInstanceProfile": { "Ref": "InstanceProfile" },
         "SecurityGroups" : { "Ref" : "SecurityGroupIDs" },
