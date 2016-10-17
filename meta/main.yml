@@ -1,5 +1,6 @@
 dependencies:
   - src: https://github.com/mGageTechOps/ansible-role-cfn-iam-role
+    version: 0.0.5
     name: ansible-role-cfn-iam-role
     when: ecs_iam_profile is not defined
     iam_role_stack_name: "{{ ecs_iam_role_stack_name }}"
