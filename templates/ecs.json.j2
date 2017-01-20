@@ -56,6 +56,14 @@
         "MinSize" : { "Ref" : "MinCapacity" },
         "MaxSize" : { "Ref" : "MaxCapacity" },
         "DesiredCapacity" : { "Ref" : "DesiredCapacity" },
+        {% if ecs_asg_term_policies is defined %}
+        "TerminationPolicies" : [
+            {% for policy in ecs_asg_term_policies %}
+              "{{ policy }}"
+              {% if not loop.last %}, {% endif %}
+            {% endfor %}
+        ],
+        {% endif %}
         "Tags" : [
           {% for tag in ecs_tags.keys() %}
             {
@@ -81,6 +89,14 @@
         }
       }
     },
+    {% if ecs_scaling_policies is defined %}
+    {% for policy in ecs_scaling_policies %}
+    "{{ policy.name }}" : {
+      "Type" : "AWS::AutoScaling::ScalingPolicy",
+      "Properties" : {{ policy.policy | to_json }}
+    },
+    {% endfor %}
+    {% endif %}
     "ContainerInstances": {
       "Type": "AWS::AutoScaling::LaunchConfiguration",
       "Metadata" : {
@@ -172,6 +188,12 @@
   "Outputs" : {
     "ecscluster" : {
       "Value" : { "Ref" : "ECSCluster" }
+    },
+    {% for policy in ecs_scaling_policies %}
+    "{{ policy.name }}" : {
+      "Value" : { "Ref" : "{{ policy.name }}" }
     }
+    {% if not loop.last %}, {% endif %}
+    {% endfor %}
   }
 }
