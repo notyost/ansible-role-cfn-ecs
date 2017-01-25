@@ -89,14 +89,12 @@
         }
       }
     },
-    {% if ecs_scaling_policies is defined %}
     {% for policy in ecs_scaling_policies %}
     "{{ policy.name }}" : {
       "Type" : "AWS::AutoScaling::ScalingPolicy",
       "Properties" : {{ policy.policy | to_json }}
     },
     {% endfor %}
-    {% endif %}
     "ContainerInstances": {
       "Type": "AWS::AutoScaling::LaunchConfiguration",
       "Metadata" : {
