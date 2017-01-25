@@ -35,3 +35,4 @@ ecs_iam_role_policies:
           "Resource": "*"
 # otherwise to use an existing iam profile created some other way, define:
 # ecs_iam_profile: "name of an existing iam profile"
+ecs_scaling_policies: []
